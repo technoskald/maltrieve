@@ -154,7 +154,7 @@ def process_urlquery(response):
     urls = set()
     for t in soup.find_all("table", class_="test"):
         for a in t.find_all("a"):
-            urls.add('http://'+re.sub('&amp;', '&', a.text))
+            urls.add('http://' + re.sub('&amp;', '&', a.text))
     return urls
 
 
@@ -231,7 +231,7 @@ def main():
     # Create the dir
     if not os.path.exists(cfg['dumpdir']):
         os.makedirs(cfg['dumpdir'])
-    
+
     try:
         d = tempfile.mkdtemp(dir=cfg['dumpdir'])
     except Exception as e:
@@ -274,11 +274,11 @@ def main():
     cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
     cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
     cfg['logheaders'] = config.get('Maltrieve', 'logheaders')
-    
+
     ignore_list = []
     if config.has_option('Maltrieve', 'mime_block'):
         ignore_list = config.get('Maltrieve', 'mime_block').split(',')
-        
+
     headers['User-Agent'] = cfg['User-Agent']
     malware_urls = set()
     for response in source_lists:
