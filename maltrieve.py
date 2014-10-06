@@ -181,6 +181,8 @@ def main():
                         action="store_true")
     parser.add_argument("-c", "--cuckoo",
                         help="Enable cuckoo analysis", action="store_true")
+    parser.add_argument("-i", "--inputfile",
+                        help="Specify file of URLs to fetch and process")
 
     global cfg
     cfg = dict()
@@ -257,33 +259,41 @@ def main():
         with open('urls.obj', 'rb') as urlfile:
             past_urls = pickle.load(urlfile)
 
-    source_urls = {'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
-                   'http://malc0de.com/rss/': process_xml_list_desc,
-                   # 'http://www.malwareblacklist.com/mbl.xml',   # removed for now
-                   'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
-                   'http://urlquery.net/': process_urlquery,
-                   'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
-                   'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
-    headers = {'User-Agent': 'Maltrieve'}
+    headers = {}
+    malware_urls = set()
+    if args.inputfile:
+        with open(args.inputfile, 'rb') as inputfile:
+            for line in inputfile:
+                print "Going to fetch %s" % line.strip()
+                malware_urls.update(line.strip())
+    else:
+        source_urls = {'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
+                       'http://malc0de.com/rss/': process_xml_list_desc,
+                       # 'http://www.malwareblacklist.com/mbl.xml',   # removed for now
+                       'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
+                       'http://urlquery.net/': process_urlquery,
+                       'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
+                       'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
+        headers = {'User-Agent': 'Maltrieve'}
 
-    reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg['proxy']) for url in source_urls]
-    source_lists = grequests.map(reqs)
+        reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg['proxy']) for url in source_urls]
+        source_lists = grequests.map(reqs)
 
-    print "Completed source processing"
+        for response in source_lists:
+            if hasattr(response, 'status_code') and response.status_code == 200:
+                malware_urls.update(source_urls[response.url](response.text))
 
-    cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
-    cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
-    cfg['logheaders'] = config.get('Maltrieve', 'logheaders')
+        print "Completed source processing"
 
     ignore_list = []
     if config.has_option('Maltrieve', 'mime_block'):
         ignore_list = config.get('Maltrieve', 'mime_block').split(',')
 
     headers['User-Agent'] = cfg['User-Agent']
-    malware_urls = set()
-    for response in source_lists:
-        if hasattr(response, 'status_code') and response.status_code == 200:
-            malware_urls.update(source_urls[response.url](response.text))
+
+    cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
+    cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
+    cfg['logheaders'] = config.get('Maltrieve', 'logheaders')
 
     malware_urls -= past_urls
     reqs = [grequests.get(url, headers=headers, proxies=cfg['proxy']) for url in malware_urls]
