@@ -264,7 +264,6 @@ def main():
     if args.inputfile:
         with open(args.inputfile, 'rb') as inputfile:
             for line in inputfile:
-                print "Going to fetch %s" % line.strip()
                 malware_urls.add(line.strip())
     else:
         source_urls = {'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
@@ -294,9 +293,6 @@ def main():
     cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
     cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
     cfg['logheaders'] = config.get('Maltrieve', 'logheaders')
-
-    print "Old URLs: %r" % past_urls
-    print "New URLs: %r" % malware_urls
 
     malware_urls -= past_urls
     reqs = [grequests.get(url, headers=headers, proxies=cfg['proxy']) for url in malware_urls]
