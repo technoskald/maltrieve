@@ -285,15 +285,16 @@ def main():
 
     print "Processing source URLs"
 
-    source_urls = {'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
-                   'http://malc0de.com/rss/': process_xml_list_desc,
-                   # 'http://www.malwareblacklist.com/mbl.xml',   # removed for now
-                   'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
-                   'http://urlquery.net/': process_urlquery,
-                   'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
-                   'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
-    headers = {'User-Agent': 'Maltrieve'}
-
+    # source_urls = {'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
+    #                'http://malc0de.com/rss/': process_xml_list_desc,
+    #                # 'http://www.malwareblacklist.com/mbl.xml',   # removed for now
+    #                'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
+    #                'http://urlquery.net/': process_urlquery,
+    #                'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
+    #                'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
+    # headers = {'User-Agent': 'Maltrieve'}
+    source_urls = {'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
+    headers = {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0; GTB7.4; InfoPath.2; SV1; .NET CLR 3.3.69573; WOW64; en-US)'}
     reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg['proxy']) for url in source_urls]
     source_lists = grequests.map(reqs)
 
