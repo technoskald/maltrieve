@@ -29,6 +29,7 @@ import os
 import pickle
 import re
 import requests
+import resource
 import tempfile
 import sys
 import ConfigParser
@@ -181,6 +182,8 @@ def chunker(seq, size):
 
 
 def main():
+    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, 2048))
+    
     global hashes
     hashes = set()
     past_urls = set()
