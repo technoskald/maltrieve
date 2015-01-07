@@ -183,7 +183,7 @@ def chunker(seq, size):
 
 def main():
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, 2048))
-    
+
     global hashes
     hashes = set()
     past_urls = set()
