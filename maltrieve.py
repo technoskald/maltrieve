@@ -301,14 +301,24 @@ def main():
                        'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
         headers = {'User-Agent': 'Maltrieve'}
 
-        reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg['proxy']) for url in source_urls]
-        source_lists = grequests.map(reqs)
+    reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg['proxy']) for url in source_urls]
+    source_lists = grequests.map(reqs)
 
-        for response in source_lists:
-            if hasattr(response, 'status_code') and response.status_code == 200:
-                malware_urls.update(source_urls[response.url](response.text))
+    source_urls = {'https://zeustracker.abuse.ch/monitor.php?urlfeed=binaries':process_xml_list_desc,
+                   'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
+                   'http://malc0de.com/rss/': process_xml_list_desc,
+                   # 'http://www.malwareblacklist.com/mbl.xml',   # removed for now
+                   'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
+                   'http://urlquery.net/': process_urlquery,
+                   'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
+                   'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
+    headers = {'User-Agent': 'Maltrieve'}
 
-        print "Completed source processing"
+    for response in source_lists:
+        if hasattr(response, 'status_code') and response.status_code == 200:
+            malware_urls.update(source_urls[response.url](response.text))
+
+    print "Completed source processing"
 
     ignore_list = []
     if config.has_option('Maltrieve', 'mime_block'):
