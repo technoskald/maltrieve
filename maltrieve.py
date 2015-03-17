@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/
 
 import argparse
-import datetime
 import feedparser
 import grequests
 import hashlib
@@ -36,8 +35,6 @@ import ConfigParser
 import magic
 
 from urlparse import urlparse
-from threading import Thread
-from Queue import Queue
 from bs4 import BeautifulSoup
 
 
@@ -85,10 +82,6 @@ def upload_viper(response, md5):
             logging.info("Submitted {md5} to Viper, response was {msg}".format(md5=md5, msg=response_data["message"]))
         except:
             logging.info("Exception caught from Viper")
-
-
-def exception_handler(request, exception):
-    logging.info("Request for %s failed: %s" % (request, exception))
 
 
 def save_malware(response, directory, black_list, white_list):
@@ -185,8 +178,6 @@ def main():
     global hashes
     hashes = set()
     past_urls = set()
-
-    now = datetime.datetime.now()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proxy",
