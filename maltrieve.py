@@ -35,8 +35,6 @@ import ConfigParser
 import magic
 
 from urlparse import urlparse
-from threading import Thread
-from Queue import Queue
 from bs4 import BeautifulSoup
 
 
@@ -45,14 +43,13 @@ def upload_vxcage(response, md5):
         url_tag = urlparse(response.url)
         files = {'file': (md5, response.content)}
         tags = {'tags': url_tag.netloc + ',Maltrieve'}
-        url = "{0}/malware/add".format(config.get('Maltrieve', 'vxcage'))
+        url = "{srv}/malware/add".format(srv=config.get('Maltrieve', 'vxcage'))
         headers = {'User-agent': 'Maltrieve'}
         try:
             # Note that this request does NOT go through proxies
             response = requests.post(url, headers=headers, files=files, data=tags)
             response_data = response.json()
-            logging.info("Submitted %s to VxCage, response was %s" % (md5,
-                         response_data["message"]))
+            logging.info("Submitted {md5} to VxCage, response was {msg}".format(md5=md5, msg=response_data["message"]))
         except:
             logging.info("Exception caught from VxCage")
 
@@ -61,12 +58,12 @@ def upload_vxcage(response, md5):
 def upload_cuckoo(response, md5):
     if response:
         data = {'url': response.url}
-        url = "{0}/tasks/create/url".format(config.get('Maltrieve', 'cuckoo'))
+        url = "{srv}/tasks/create/url".format(srv=config.get('Maltrieve', 'cuckoo'))
         headers = {'User-agent': 'Maltrieve'}
         #try:
         response = requests.post(url, headers=headers, data=data)
         response_data = response.json()
-        logging.info("Submitted %s to Cuckoo, task ID %s", md5, response_data["task_id"])
+        logging.info("Submitted {md5} to Cuckoo, task ID {taskid}".format(md5=md5, taskid=response_data["task_id"]))
         #except:
             #logging.info("Exception caught from Cuckoo")
 
@@ -76,20 +73,15 @@ def upload_viper(response, md5):
         url_tag = urlparse(response.url)
         files = {'file': (md5, response.content)}
         tags = {'tags': url_tag.netloc + ',Maltrieve'}
-        url = "{0}/file/add".format(config.get('Maltrieve', 'viper'))
+        url = "{srv}/file/add".format(srv=config.get('Maltrieve', 'viper'))
         headers = {'User-agent': 'Maltrieve'}
         try:
             # Note that this request does NOT go through proxies
             response = requests.post(url, headers=headers, files=files, data=tags)
             response_data = response.json()
-            logging.info("Submitted %s to Viper, response was %s" % (md5,
-                         response_data["message"]))
+            logging.info("Submitted {md5} to Viper, response was {msg}".format(md5=md5, msg=response_data["message"]))
         except:
             logging.info("Exception caught from Viper")
-
-
-def exception_handler(request, exception):
-    logging.info("Request for %s failed: %s" % (request, exception))
 
 
 def save_malware(response, directory, black_list, white_list):
@@ -97,18 +89,18 @@ def save_malware(response, directory, black_list, white_list):
     data = response.content
     mime_type = magic.from_buffer(data, mime=True)
     if mime_type in black_list:
-        logging.info('%s in ignore list for %s', mime_type, url)
+        logging.info('{mtype} in ignore list for {url}'.format(mtype=mime_type, url=url))
         return
     if white_list:
         if mime_type in white_list:
             pass
         else:
-            logging.info('%s not in whitelist for %s', mime_type, url)
+            logging.info('{mtype} not in whitelist for {url}'.format(mtype=mime_type, url=url))
             return
 
     # Hash and log
     md5 = hashlib.md5(data).hexdigest()
-    logging.info("%s hashes to %s" % (url, md5))
+    logging.info("{url} hashes to {md5}".format(url=url, md5=md5))
 
     # Assume that if viper or vxcage then we dont need to write to file as well.
     stored = False
@@ -133,7 +125,7 @@ def save_malware(response, directory, black_list, white_list):
             store_path = os.path.join(directory, md5)
         with open(store_path, 'wb') as f:
             f.write(data)
-            logging.info("Saved %s to dump dir" % md5)
+            logging.info("Saved {md5} to dump dir".format(md5=md5))
     return True
 
 
@@ -184,8 +176,6 @@ def main():
     global hashes
     hashes = set()
     past_urls = set()
-
-    now = datetime.datetime.now()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proxy",
@@ -243,8 +233,8 @@ def main():
     if cfg['proxy']:
         logging.info('Using proxy %s', cfg['proxy'])
         my_ip = requests.get('http://ipinfo.io/ip', proxies=cfg['proxy']).text
-        logging.info('External sites see %s', my_ip)
-        print "External sites see %s" % my_ip
+        logging.info('External sites see {ip}'.format(ip=my_ip))
+        print 'External sites see {ip}'.format(ip=my_ip)
 
     cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
     cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
@@ -274,13 +264,12 @@ def main():
     try:
         d = tempfile.mkdtemp(dir=cfg['dumpdir'])
     except Exception as e:
-        logging.error('Could not open %s for writing (%s), using default',
-                      cfg['dumpdir'], e)
+        logging.error('Could not open {dir} for writing ({exception}), using default'.format(dir=cfg['dumpdir'], exception=e))
         cfg['dumpdir'] = '/tmp/malware'
     else:
         os.rmdir(d)
 
-    logging.info('Using %s as dump directory', cfg['dumpdir'])
+    logging.info('Using {dir} as dump directory'.format(dir=cfg['dumpdir']))
 
     if os.path.exists('hashes.json'):
         with open('hashes.json', 'rb') as hashfile:
