@@ -12,8 +12,8 @@
 Maltrieve originated as a fork of [mwcrawler](https://github.com/ricardo-dias/mwcrawler). It retrieves malware directly from the sources as listed at a number of sites. Currently we crawl the following:
 
 * [Malc0de](http://malc0de.com/rss)
-* [Malware Black List](http://www.malwareblacklist.com/mbl.xml)
 * [Malware Domain List](http://www.malwaredomainlist.com/hostslist/mdl.xml)
+* [Malware URLs](http://malwareurls.joxeankoret.com/normal.txt)
 * [VX Vault](http://vxvault.siri-urz.net/URL_List.php)
 * [URLquery](http://urlquery.net/)
 * [CleanMX](http://support.clean-mx.de/clean-mx/xmlviruses.php?)
