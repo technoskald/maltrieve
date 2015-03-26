@@ -18,23 +18,22 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be repor
 
 This Code of Conduct is adapted from the [Contributor Covenant](http:contributor-covenant.org), version 1.0.0, available at [http://contributor-covenant.org/version/1/0/0/](http://contributor-covenant.org/version/1/0/0/)
 
-
 ## GitHub
 
-You need a [GitHub](https://github.com) account for most everything like opening or commenting on issue and submitting code to the project via pull requests. Feel free to use a pseudonym - we care about the code & the data and will respect your privacy.
+You need a [GitHub](https://github.com) account for most everything. For example, issue creation & discussion and submitting code to the project all occur on GitHub. Feel free to use a pseudonym - we respect your privacy.
 
 ## Documentation
 
-We need more documentation: use cases, better installation instructions, common problems, etc. Even if you don't write code, writing up your experiences with Maltrieve can help others!
+We need more documentation: use cases, better installation instructions, common problems, etc. Even if you don't write code, writing up your experiences with Maltrieve can help others! This might mean how you solved a problem or how you use the tool.
 
 ## Bug reporting
 
-Yes, Maltrieve has bugs. Some of them we know about (and are working on), others we need somebody to tell us about. If you submit a bug report (issue), please be sure to include the actual program output and let us know anything relevant about the environment (OS and Python version, for example, or if you have made any changes to the code). In particular, we need to know which version you're running (listed in `setup.py`) and the results of `pip freeze`.
+Yes, Maltrieve has bugs. Some of them we know about (and are working on), others we need somebody to tell us about. If you submit a bug report (issue), please be sure to include the actual program output and let us know anything relevant about the environment (OS and Python version, for example, or if you have made any changes to the code). In particular, we need to know which version you're running (listed in `setup.py`) and the results of `pip freeze` as well as any errors generated to the screen such as a stack trace.
 
 ## Pull requests
 
-The easiest and best way to do this is to [fork our repository](https://help.github.com/articles/fork-a-repo) and then [send a pull request](https://help.github.com/articles/using-pull-requests) **against the `dev` branch.** In your description, please be sure to note any related issues (for example, if your PR fixes a previously-reported bug or implements an existing enhancement request). We will review and possibly request additional changes before merging. The best patches will be those that conform to [PEP8](http://legacy.python.org/dev/peps/pep-0008/) and refrain from introducing new dependencies as much as possible. Sometimes that will be okay, of course, if it does something new and awesome! Also please keep in mind that Maltrieve is released under the GPL v3 and this will include all code sent back to us.
+The easiest and best way to do this is to [fork our repository](https://help.github.com/articles/fork-a-repo) and then [send a pull request](https://help.github.com/articles/using-pull-requests) **against the `dev` branch.** In your description, please be sure to note any related issues. For example, maybe your PR fixes a previously-reported bug or implements an existing enhancement reques). We will review and possibly request additional changes before merging. The best patches will be those that conform to [PEP8](http://legacy.python.org/dev/peps/pep-0008/) and refrain from introducing new dependencies as much as possible. Sometimes that will be okay, of course, if it does something new and awesome! Also please keep in mind that Maltrieve is released under the GPL v3 and this will include all code sent back to us.
 
 ## Other contact
 
-If you just want to get in touch, you can always reach me on Twitter as [@kylemaxwell](https://twitter.com/kylemaxwell).
+If you just want to get in touch, you can always reach me on Twitter as [@kylemaxwell](https://twitter.com/kylemaxwell) or on Gmail as krmaxwell@gmail.com.
