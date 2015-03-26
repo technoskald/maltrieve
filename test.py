@@ -81,3 +81,10 @@ def test_get_sources():
     cfg = maltrieve.config(args, filename='maltrieve-test.cfg')
     source_lists = maltrieve.process_source_lists(cfg)
     assert len(source_lists) == len(cfg.source_urls)
+
+
+def test_save_malware():
+    args = maltrieve.setup_args([])
+    cfg = maltrieve.config(args, filename='maltrieve-test.cfg')
+    r = requests.get('http://maltrieve.org')
+    assert maltrieve.save_malware(r, cfg)

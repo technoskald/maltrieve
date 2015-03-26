@@ -190,7 +190,7 @@ def save_malware(response, cfg):
     url = response.url
     data = response.content
     mime_type = magic.from_buffer(data, mime=True)
-    if mime_type in cfg.black_list:
+    if cfg.black_list and mime_type in cfg.black_list:
         logging.info('{mtype} in ignore list for {url}'.format(mtype=mime_type, url=url))
         return
     if cfg.white_list:
