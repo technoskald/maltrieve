@@ -75,12 +75,12 @@ class config:
         if self.configp.has_option('Maltrieve', 'black_list'):
             self.black_list = self.configp.get('Maltrieve', 'black_list').strip().split(',')
         else:
-            self.black_list = []
+            self.black_list = None
 
         if self.configp.has_option('Maltrieve', 'white_list'):
             self.white_list = self.configp.get('Maltrieve', 'white_list').strip().split(',')
         else:
-            self.white_list = False
+            self.white_list = None
 
         # make sure we can open the directory for writing
         if args.dumpdir:
@@ -114,6 +114,14 @@ class config:
         self.cuckoo = args.cuckoo or self.configp.has_option('Maltrieve', 'cuckoo')
         self.viper = args.viper or self.configp.has_option('Maltrieve', 'viper')
         self.logheaders = self.configp.get('Maltrieve', 'logheaders')
+
+        self.source_urls = {'https://zeustracker.abuse.ch/monitor.php?urlfeed=binaries': process_xml_list_desc,
+                            'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
+                            'http://malc0de.com/rss/': process_xml_list_desc,
+                            'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
+                            'http://urlquery.net/': process_urlquery,
+                            'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
+                            'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
 
     def check_proxy(self):
         if self.proxy:
@@ -322,40 +330,32 @@ def save_urls(urls, filename='urls.json'):
         json.dump(list(urls), urlfile, indent=2)
 
 
+def process_source_lists(cfg):
+    print "Processing source URLs"
+
+    # TODO: conform to spec
+    headers = {'User-Agent': 'Maltrieve'}
+    reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg.proxy) for url in cfg.source_urls]
+    return grequests.map(reqs)
+
+
 def main():
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, 2048))
-    hashes = set()
-    past_urls = set()
-
     args = setup_args(sys.argv[1:])
     cfg = config(args, 'maltrieve.cfg')
     cfg.check_proxy()
 
     hashes = load_hashes('hashes.json')
     past_urls = load_urls('urls.json')
-
-    print "Processing source URLs"
-
     # TODO: Replace with plugins
-    source_urls = {'https://zeustracker.abuse.ch/monitor.php?urlfeed=binaries': process_xml_list_desc,
-                   'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
-                   'http://malc0de.com/rss/': process_xml_list_desc,
-                   'http://vxvault.siri-urz.net/URL_List.php': process_simple_list,
-                   'http://urlquery.net/': process_urlquery,
-                   'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
-                   'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
-    headers = {'User-Agent': 'Maltrieve'}
 
-    reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg.proxy) for url in source_urls]
-    source_lists = grequests.map(reqs)
+    source_lists = process_source_lists(cfg)
 
-    print "Completed source processing"
-
-    headers['User-Agent'] = cfg.useragent
+    headers = {'User-Agent': cfg.useragent}
     malware_urls = set()
     for response in source_lists:
         if hasattr(response, 'status_code') and response.status_code == 200:
-            malware_urls.update(source_urls[response.url](response.text))
+            malware_urls.update(cfg.source_urls[response.url](response.text))
 
     print "Downloading samples, check log for details"
 
