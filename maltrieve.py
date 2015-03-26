@@ -334,7 +334,7 @@ def process_source_lists(cfg):
     print "Processing source URLs"
 
     # TODO: conform to spec
-    headers = {'User-Agent': 'Maltrieve'}
+    headers = {'User-Agent': 'Maltrieve/0.7'}
     reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg.proxy) for url in cfg.source_urls]
     return grequests.map(reqs)
 
