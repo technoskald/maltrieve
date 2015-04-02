@@ -16,7 +16,8 @@ setup(name='maltrieve',
           'grequests==0.2.0',
           'python-magic==0.4.6',
           'requests==2.3.0',
-          'wsgiref==0.1.2'
+          'wsgiref==0.1.2',
+          'boto==3.36.0'
       ],
       package_dir={'maltrieve': 'src'},
       packages=['maltrieve'],

@@ -31,6 +31,7 @@ Other improvements include:
 * Multiple user agent support
 * Better error handling
 * [VxCage](https://github.com/botherder/vxcage), [Viper](https://github.com/botherder/viper) and [Cuckoo Sandbox](http://www.cuckoosandbox.org) support
+* Support for saving download malware to Amazon S3
 
 
 ## Installation
@@ -42,6 +43,7 @@ Maltrieve requires the following dependencies:
 * [feedparser](https://pypi.python.org/pypi/feedparser)
 * [python-magic](https://pypi.python.org/pypi/python-magic/)
 * [Requests](http://www.python-requests.org)
+* [boto/(http://docs.pythonboto.org/en/latest)
 
 With the exception of the Python header files, these can all be found in [requirements.txt](./requirements.txt). On Debian-based distributions, run `sudo apt-get install python-dev`. On Red Hat-based distributions, run `sudo yum install python-devel`. After that, just `pip install -e .`.  You may need to prepend that with ```sudo``` if not running in a virtual environment, but using such an environment is highly encouraged.
 
