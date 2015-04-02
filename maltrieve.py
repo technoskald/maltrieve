@@ -238,8 +238,7 @@ def main():
                             datefmt='%Y-%m-%d %H:%M:%S')
     else:
         logging.basicConfig(level=logging.DEBUG,
-                            format='%(asctime)s %(thread)d %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S')
+                            format='%(asctime)s %(levelname)s %(thread)d %(message)s')
 
     if args.proxy:
         cfg['proxy'] = {'http': args.proxy}

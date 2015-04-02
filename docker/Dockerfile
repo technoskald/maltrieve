@@ -26,6 +26,7 @@ RUN apt-get update && \
     python2.7 \
     python2.7-dev \
     python-pip \
+    supervisor \
     python-setuptools && \
 
   rm -rf /var/lib/apt/lists/* && \
