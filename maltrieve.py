@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/
 
 import argparse
-import datetime
 import feedparser
 import grequests
 import hashlib
@@ -33,11 +32,11 @@ import tempfile
 import sys
 import ConfigParser
 import magic
+import bs4
 
 from urlparse import urlparse
-from threading import Thread
-from Queue import Queue
-from bs4 import BeautifulSoup
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
 
 
 def upload_vxcage(response, md5):
@@ -52,7 +51,7 @@ def upload_vxcage(response, md5):
             response = requests.post(url, headers=headers, files=files, data=tags)
             response_data = response.json()
             logging.info("Submitted %s to VxCage, response was %s" % (md5,
-                         response_data["message"]))
+                                                                      response_data["message"]))
         except:
             logging.info("Exception caught from VxCage")
 
@@ -63,12 +62,9 @@ def upload_cuckoo(response, md5):
         data = {'url': response.url}
         url = "{0}/tasks/create/url".format(config.get('Maltrieve', 'cuckoo'))
         headers = {'User-agent': 'Maltrieve'}
-        #try:
         response = requests.post(url, headers=headers, data=data)
         response_data = response.json()
         logging.info("Submitted %s to Cuckoo, task ID %s", md5, response_data["task_id"])
-        #except:
-            #logging.info("Exception caught from Cuckoo")
 
 
 def upload_viper(response, md5):
@@ -78,14 +74,27 @@ def upload_viper(response, md5):
         tags = {'tags': url_tag.netloc + ',Maltrieve'}
         url = "{0}/file/add".format(config.get('Maltrieve', 'viper'))
         headers = {'User-agent': 'Maltrieve'}
-        try:
-            # Note that this request does NOT go through proxies
-            response = requests.post(url, headers=headers, files=files, data=tags)
-            response_data = response.json()
-            logging.info("Submitted %s to Viper, response was %s" % (md5,
-                         response_data["message"]))
-        except:
-            logging.info("Exception caught from Viper")
+        # Note that this request does NOT go through proxies
+        response = requests.post(url, headers=headers, files=files, data=tags)
+        response_data = response.json()
+        logging.info("Submitted %s to Viper, response was %s" % (md5,
+                                                                 response_data["message"]))
+
+
+def upload_s3(response, md5):
+    conn = S3Connection(cfg['aws_access_key'], cfg['aws_secret_key'])
+    bucket = conn.create_bucket(cfg['aws_bucket'])
+    # we store based on 1024K boundaries
+    data = response.content
+    mime_type = magic.from_buffer(data, mime=True)
+    prefix = len(data) // 1024000
+
+    key = str(prefix) + "/" + mime_type + "/" + md5
+    aws_key = Key(bucket)
+    aws_key.key = key
+    aws_key.content_type = mime_type
+    aws_key.set_contents_from_string(data)
+    logging.info("Submitted %s to Amazon S3", key)
 
 
 def exception_handler(request, exception):
@@ -121,6 +130,9 @@ def save_malware(response, directory, black_list, white_list):
     if cfg['viper']:
         upload_viper(response, md5)
         stored = True
+    if cfg['aws']:
+        upload_s3(response, md5)
+        stored = True
     # else save to disk
     if not stored:
         if cfg['sort_mime']:
@@ -150,7 +162,7 @@ def process_xml_list_desc(response):
             url = desc.split(' ')[4].rstrip(',')
         url = re.sub('&amp;', '&', url)
         if not re.match('http', url):
-            url = 'http://' + url
+            url += 'http://'
         urls.add(url)
 
     return urls
@@ -168,7 +180,7 @@ def process_simple_list(response):
 
 
 def process_urlquery(response):
-    soup = BeautifulSoup(response)
+    soup = bs4.BeautifulSoup(response)
     urls = set()
     for t in soup.find_all("table", class_="test"):
         for a in t.find_all("a"):
@@ -184,8 +196,6 @@ def main():
     global hashes
     hashes = set()
     past_urls = set()
-
-    now = datetime.datetime.now()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proxy",
@@ -204,6 +214,11 @@ def main():
                         help="Enable Cuckoo analysis", action="store_true", default=False)
     parser.add_argument("-s", "--sort_mime",
                         help="Sort files by MIME type", action="store_true", default=False)
+    parser.add_argument("-a", "--aws",
+                        help="Dump the files to an S3 bucket", action="store_true", default=False)
+    parser.add_argument("--aws_access_key", help="Your AWS Access Key ID", default=False)
+    parser.add_argument("--aws_secret_key", help="Your AWS Secret Key", default=False)
+    parser.add_argument("--aws_bucket", help="AWS Bucker for storage", default=False)
 
     global cfg
     cfg = dict()
@@ -223,8 +238,7 @@ def main():
                             datefmt='%Y-%m-%d %H:%M:%S')
     else:
         logging.basicConfig(level=logging.DEBUG,
-                            format='%(asctime)s %(thread)d %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S')
+                            format='%(asctime)s %(levelname)s %(thread)d %(message)s')
 
     if args.proxy:
         cfg['proxy'] = {'http': args.proxy}
@@ -249,8 +263,11 @@ def main():
     cfg['vxcage'] = args.vxcage or config.has_option('Maltrieve', 'vxcage')
     cfg['cuckoo'] = args.cuckoo or config.has_option('Maltrieve', 'cuckoo')
     cfg['viper'] = args.viper or config.has_option('Maltrieve', 'viper')
+    cfg['aws'] = args.aws or config.has_option('Amazon', 'bucket')
     cfg['logheaders'] = config.get('Maltrieve', 'logheaders')
-
+    cfg['aws_access_key'] = args.aws_access_key or config.has_option('Amazon', 'AWS_ACCESS_KEY')
+    cfg['aws_secret_key'] = args.aws_secret_key or config.has_option('Amazon', 'AWS_SECRET_KEY')
+    cfg['aws_bucket'] = args.aws_bucket or config.get('Amazon', 'bucket')
     black_list = []
     if config.has_option('Maltrieve', 'black_list'):
         black_list = config.get('Maltrieve', 'black_list').strip().split(',')
