@@ -37,6 +37,8 @@ import magic
 import requests
 from bs4 import BeautifulSoup
 
+from yapsy.PluginManager import PluginManager
+
 
 class config(object):
 
@@ -343,45 +345,6 @@ def save_malware(response, cfg):
     return True
 
 
-def process_xml_list_desc(response):
-    feed = feedparser.parse(response)
-    urls = set()
-
-    for entry in feed.entries:
-        desc = entry.description
-        url = desc.split(' ')[1].rstrip(',')
-        if url == '':
-            continue
-        if url == '-':
-            url = desc.split(' ')[4].rstrip(',')
-        url = re.sub('&amp;', '&', url)
-        if not re.match('http', url):
-            url = 'http://' + url
-        urls.add(url)
-
-    return urls
-
-
-def process_xml_list_title(response):
-    feed = feedparser.parse(response)
-    urls = set([re.sub('&amp;', '&', entry.title) for entry in feed.entries])
-    return urls
-
-
-def process_simple_list(response):
-    urls = set([re.sub('&amp;', '&', line.strip()) for line in response.split('\n') if line.startswith('http')])
-    return urls
-
-
-def process_urlquery(response):
-    soup = BeautifulSoup(response)
-    urls = set()
-    for t in soup.find_all("table", class_="test"):
-        for a in t.find_all("a"):
-            urls.add('http://' + re.sub('&amp;', '&', a.text))
-    return urls
-
-
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
@@ -464,28 +427,57 @@ def main():
     past_urls = load_urls('urls.json')
 
     print "Processing source URLs"
+    plugin_dir = './plugins'
+    if plugin_dir is None or plugin_dir == '':
+        print "Reaper: Couldn't find plugins for processing"
+        return
 
-    # TODO: Replace with plugins
-    source_urls = {'https://zeustracker.abuse.ch/monitor.php?urlfeed=binaries': process_xml_list_desc,
-                   'http://www.malwaredomainlist.com/hostslist/mdl.xml': process_xml_list_desc,
-                   'http://malc0de.com/rss/': process_xml_list_desc,
-                   'http://vxvault.net/URL_List.php': process_simple_list,
-                   'http://urlquery.net/': process_urlquery,
-                   'http://support.clean-mx.de/clean-mx/rss?scope=viruses&limit=0%2C64': process_xml_list_title,
-                   'http://malwareurls.joxeankoret.com/normal.txt': process_simple_list}
+    print 'Loading Plugins'
+    # Load the plugins from the plugin directory.
+    manager = PluginManager()
+    manager.setPluginPlaces([plugin_dir])
+    manager.collectPlugins()
+
+    source_urls = []
+    for plugin in manager.getAllPlugins():
+        print 'Processing: ' + plugin.plugin_object.get_name()
+        o_headers = None
+        try:
+            o_headers = plugin.plugin_object.get_headers()
+        except Exception as e:
+            pass  # because we don't care if this isn't implemented in plugins
+        for url in plugin.plugin_object.get_URLs():
+            if url.startswith('file://'):
+                files.append(url.partition('://')[2])
+            else:
+                source_urls.append(url)
+
     headers = {'User-Agent': 'Maltrieve'}
-
     reqs = [grequests.get(url, timeout=60, headers=headers, proxies=cfg.proxy) for url in source_urls]
     source_lists = grequests.map(reqs)
 
-    print "Completed source processing"
+    print "Completed source retrieval"
 
     headers['User-Agent'] = cfg.useragent
     malware_urls = set()
     for response in source_lists:
         if hasattr(response, 'status_code') and response.status_code == 200:
-            malware_urls.update(source_urls[response.url](response.text))
-
+            print "Processing feed from %s" % response.url
+            # Loop through all the plugins and see which ones have matching names
+            for plugin in manager.getAllPlugins():
+                urls = set(plugin.plugin_object.URLS)
+                # For those plugins that build dynamic URLs, we should get those for the comparison for parsing
+                urls = set(plugin.plugin_object.get_URLs())
+                if response.url in urls:
+                        print 'Parsing feed from %s' % response.url
+                        result = plugin.plugin_object.process_data(response.url, response.text)
+                        for r in result:
+                            indicator = None
+                            if r['indicator_type'] == 'IPv4' or r['indicator_type'] == 'FQDN':
+                                indicator = 'http://' + r['indicator']
+                                malware_urls.add(indicator)
+                            elif r['indicator_type'] == 'URL':
+                                malware_urls.add(indicator)
     if cfg.inputfile:
         with open(cfg.inputfile, 'rb') as f:
             moar_urls = list(f)
