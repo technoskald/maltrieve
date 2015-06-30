@@ -22,6 +22,7 @@ setup(name='maltrieve',
           'pytest-cov',
           'coveralls',
           'LinkChecker',
+          'yapsy',
           'markdown'
       ],
       package_dir={'maltrieve': 'src'},
