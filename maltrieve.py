@@ -47,6 +47,13 @@ class config(object):
     def __init__(self, args, filename='maltrieve.cfg'):
         self.configp = ConfigParser.ConfigParser()
         self.configp.read(filename)
+        self.plugin_dir = './plugins'
+
+        try:
+            if self.configp.get('Maltrieve', 'plugin_dir'):
+                self.plugin_dir = self.configp.get('Maltrieve', 'plugin_dir')
+        except Exception as e:
+            pass
 
         if args.logfile or self.configp.get('Maltrieve', 'logfile'):
             if args.logfile:
@@ -426,16 +433,10 @@ def main():
     hashes = load_hashes('hashes.json')
     past_urls = load_urls('urls.json')
 
-    print "Processing source URLs"
-    plugin_dir = './plugins'
-    if plugin_dir is None or plugin_dir == '':
-        print "Reaper: Couldn't find plugins for processing"
-        return
-
     print 'Loading Plugins'
     # Load the plugins from the plugin directory.
     manager = PluginManager()
-    manager.setPluginPlaces([plugin_dir])
+    manager.setPluginPlaces([cfg.plugin_dir])
     manager.collectPlugins()
 
     source_urls = []
@@ -478,6 +479,7 @@ def main():
                                 malware_urls.add(indicator)
                             elif r['indicator_type'] == 'URL':
                                 malware_urls.add(indicator)
+
     if cfg.inputfile:
         with open(cfg.inputfile, 'rb') as f:
             moar_urls = list(f)
