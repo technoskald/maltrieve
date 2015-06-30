@@ -473,12 +473,11 @@ def main():
                         print 'Parsing feed from %s' % response.url
                         result = plugin.plugin_object.process_data(response.url, response.text)
                         for r in result:
-                            indicator = None
                             if r['indicator_type'] == 'IPv4' or r['indicator_type'] == 'FQDN':
                                 indicator = 'http://' + r['indicator']
                                 malware_urls.add(indicator)
                             elif r['indicator_type'] == 'URL':
-                                malware_urls.add(indicator)
+                                malware_urls.add(r['indicator'])
 
     if cfg.inputfile:
         with open(cfg.inputfile, 'rb') as f:
