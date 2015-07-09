@@ -66,7 +66,7 @@ class config(object):
             self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'proxy')}
         elif self.configp.has_option('Maltrieve', 'https_proxy'):
             self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'https_proxy')}
-        else
+        else:
             self.proxy = None
 
         if self.configp.has_option('Maltrieve', 'User-Agent'):
