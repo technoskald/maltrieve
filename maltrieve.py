@@ -59,9 +59,17 @@ class config(object):
                                 format='%(asctime)s %(thread)d %(message)s',
                                 datefmt='%Y-%m-%d %H:%M:%S')
         if args.proxy:
-            self.proxy = {'http': args.proxy}
+            self.proxy = {'http': args.proxy, 'https': args.proxy}
+        elif args.https_proxy:
+            self.proxy = {'https': args.https_proxy}
+        elif args.proxy and args.proxy:
+            self.proxy = {'http': args.proxy, 'https': args.https_proxy}
         elif self.configp.has_option('Maltrieve', 'proxy'):
             self.proxy = {'http': self.configp.get('Maltrieve', 'proxy')}
+        elif self.configp.has_option('Maltrieve', 'https_proxy'):
+            self.proxy = {'https': self.configp.get('Maltrieve', 'https_proxy')}
+        elif self.configp.has_option('Maltrieve', 'proxy') and self.configp.has_option('Maltrieve', 'proxy'):
+            self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'https_proxy')}
         else:
             self.proxy = None
 
@@ -118,8 +126,11 @@ class config(object):
 
         # TODO: Merge these
         self.vxcage = args.vxcage or self.configp.has_option('Maltrieve', 'vxcage')
+        self.vxcage_use_proxy = args.vxcage_use_proxy or self.configp.has_option('Maltrieve', 'vxcage_use_proxy')
         self.cuckoo = args.cuckoo or self.configp.has_option('Maltrieve', 'cuckoo')
+        self.cuckoo_use_proxy = args.cuckoo_use_proxy or self.configp.has_option('Maltrieve', 'cuckoo_use_proxy')
         self.viper = args.viper or self.configp.has_option('Maltrieve', 'viper')
+        self.viper_use_proxy = args.viper_use_proxy or self.configp.has_option('Maltrieve', 'viper_use_proxy')
 
         # CRITs
         if args.crits or self.configp.has_option('Maltrieve', 'crits'):
@@ -127,6 +138,11 @@ class config(object):
             self.crits_user = self.configp.get('Maltrieve', 'crits_user')
             self.crits_key = self.configp.get('Maltrieve', 'crits_key')
             self.crits_source = self.configp.get('Maltrieve', 'crits_source')
+            self.crits_use_proxy = args.crits_use_proxy or self.configp.has_option('Maltrieve', 'crits_use_proxy')
+            if self.configp.get('Maltrieve', 'crits_cert'):
+                self.crits_cert = self.configp.get('Maltrieve', 'crits_cert')
+            else:
+               self.crits_cert = False 
         else:
             self.crits = False
 
@@ -159,9 +175,12 @@ def upload_crits(response, md5, cfg):
             'domain': url_tag.netloc
         }
         try:
-            # Note that this request does NOT go through proxies
+            # Note that this request could go through proxies
             logging.debug("Domain submission: %s|%r", url, domain_data)
-            domain_response = requests.post(url, headers=headers, data=domain_data, verify=False)
+            if cfg.crits_use_proxy:
+                domain_response = requests.post(url, headers=headers, data=domain_data, proxies=self.proxy, verify=cfg.crits_cert)
+            else:
+                domain_response = requests.post(url, headers=headers, data=domain_data, verify=cfg.crits_cert)
             # pylint says "Instance of LookupDict has no 'ok' member" but it's wrong, I checked
             if domain_response.status_code == requests.codes.ok:
                 domain_response_data = domain_response.json()
@@ -194,8 +213,11 @@ def upload_crits(response, md5, cfg):
             'file_format': file_type  # must be type zip, rar, or raw
         }
         try:
-            # Note that this request does NOT go through proxies
-            sample_response = requests.post(url, headers=headers, files=files, data=sample_data, verify=False)
+            # Note that this request can go through proxies
+            if cfg.crits_use_proxy:
+                sample_response = requests.post(url, headers=headers, files=files, data=sample_data, proxies=self.proxy, verify=cfg.crits_cert)
+            else:
+                sample_response = requests.post(url, headers=headers, files=files, data=sample_data, verify=cfg.crits_cert)
             # pylint says "Instance of LookupDict has no 'ok' member" but it's wrong, I checked
             if sample_response.status_code == requests.codes.ok:
                 sample_response_data = sample_response.json()
@@ -226,8 +248,11 @@ def upload_crits(response, md5, cfg):
                 'rel_date': datetime.datetime.now()
             }
             try:
-                # Note that this request does NOT go through proxies
-                relationship_response = requests.post(url, headers=headers, data=relationship_data, verify=False)
+                # Note that this request could go through proxies
+                if cfg.crits_use_proxy:
+                    relationship_response = requests.post(url, headers=headers, data=relationship_data, proxies=self.proxy, verify=cfg.crits_cert)
+                else:
+                    relationship_response = requests.post(url, headers=headers, data=relationship_data, verify=cfg.crits_cert)
                 # pylint says "Instance of LookupDict has no 'ok' member"
                 if relationship_response.status_code != requests.codes.ok:
                     logging.info("Submitted relationship info for %s to CRITs, response was %r",
@@ -249,8 +274,11 @@ def upload_vxcage(response, md5, cfg):
         url = "{srv}/malware/add".format(srv=cfg.vxcage)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            # Note that this request does NOT go through proxies
-            response = requests.post(url, headers=headers, files=files, data=tags)
+            # Note that this request can go through proxies
+            if cfg.vxcage_use_proxy:
+                response = requests.post(url, headers=headers, files=files, data=tags, proxies=self.proxy)
+            else:
+                response = requests.post(url, headers=headers, files=files, data=tags)
             response_data = response.json()
             logging.info("Submitted %s to VxCage, response was %d", md5, response_data["message"])
         except requests.exceptions.ConnectionError:
@@ -267,7 +295,11 @@ def upload_cuckoo(response, md5, cfg):
         url = "{srv}/tasks/create/url".format(srv=cfg.cuckoo)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            response = requests.post(url, headers=headers, data=data)
+            # Note that this request can go through proxies
+            if cfg.cuckoo_use_proxy:
+                response = requests.post(url, headers=headers, data=data, proxies=self.proxy)
+            else:
+                response = requests.post(url, headers=headers, data=data)
             response_data = response.json()
             logging.info("Submitted %s to Cuckoo, task ID %d", md5, response_data["task_id"])
         except requests.exceptions.ConnectionError:
@@ -285,8 +317,11 @@ def upload_viper(response, md5, cfg):
         url = "{srv}/file/add".format(srv=cfg.viper)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            # Note that this request does NOT go through proxies
-            response = requests.post(url, headers=headers, files=files, data=tags)
+            # Note that this request can go through proxies
+            if cfg.viper_use_proxy:
+                response = requests.post(url, headers=headers, files=files, data=tags, proxies=self.proxy)
+            else:
+                response = requests.post(url, headers=headers, files=files, data=tags)
             response_data = response.json()
             logging.info("Submitted %s to Viper, response was %s", md5, response_data["message"])
         except requests.exceptions.ConnectionError:
@@ -389,7 +424,9 @@ def chunker(seq, size):
 def setup_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--proxy",
-                        help="Define HTTP proxy as address:port")
+                        help="Define HTTP proxy as http://user:password@address:port/")
+    parser.add_argument("-hp", "--https_proxy",
+                        help="Define HTTPS proxy as http://user:password@address:port/")
     parser.add_argument("-d", "--dumpdir",
                         help="Define dump directory for retrieved files")
     parser.add_argument("-i", "--inputfile", help="File of URLs to process")
@@ -398,14 +435,26 @@ def setup_args(args):
     parser.add_argument("-r", "--crits",
                         help="Dump the file to a Crits instance.",
                         action="store_true", default=False)
+    parser.add_argument("-rp", "--crits_use_proxy",
+                        help="Use proxy for CRITs instance",
+                        action="store_true", default=False)
     parser.add_argument("-v", "--viper",
                         help="Dump the files to a Viper instance",
+                        action="store_true", default=False)
+    parser.add_argument("-vp", "--viper_use_proxy",
+                        help="Use proxy for Viper instance",
                         action="store_true", default=False)
     parser.add_argument("-x", "--vxcage",
                         help="Dump the file to a VxCage instance",
                         action="store_true", default=False)
+    parser.add_argument("-xp", "--vxcage_use_proxy",
+                        help="Use proxy for VxCage instance",
+                        action="store_true", default=False)
     parser.add_argument("-c", "--cuckoo",
                         help="Enable Cuckoo analysis", action="store_true", default=False)
+    parser.add_argument("-cp", "--cuckoo_use_proxy",
+                        help="Use proxy for Cuckoo instance",
+                        action="store_true", default=False)
     parser.add_argument("-s", "--sort_mime",
                         help="Sort files by MIME type", action="store_true", default=False)
     parser.add_argument("--config", help="Alternate config file (default maltrieve.cfg)")
