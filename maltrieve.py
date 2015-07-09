@@ -135,9 +135,7 @@ class config(object):
             self.crits_key = self.configp.get('Maltrieve', 'crits_key')
             self.crits_source = self.configp.get('Maltrieve', 'crits_source')
             self.crits_use_proxy = args.crits_use_proxy or self.configp.has_option('Maltrieve', 'crits_use_proxy')
-            if args.crits_cert:
-                self.crits_cert = args.crits_cert
-            elif self.configp.get('Maltrieve', 'crits_cert'):
+            if self.configp.get('Maltrieve', 'crits_cert'):
                 self.crits_cert = self.configp.get('Maltrieve', 'crits_cert')
             else:
                self.crits_cert = False 
