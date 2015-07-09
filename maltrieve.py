@@ -59,9 +59,9 @@ class config(object):
                                 format='%(asctime)s %(thread)d %(message)s',
                                 datefmt='%Y-%m-%d %H:%M:%S')
         if args.proxy:
-            self.proxy = {'http': args.proxy}
+            self.proxy = {'http': args.proxy, 'https': args.proxy}
         elif self.configp.has_option('Maltrieve', 'proxy'):
-            self.proxy = {'http': self.configp.get('Maltrieve', 'proxy')}
+            self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'proxy')}
         else:
             self.proxy = None
 
@@ -127,6 +127,12 @@ class config(object):
             self.crits_user = self.configp.get('Maltrieve', 'crits_user')
             self.crits_key = self.configp.get('Maltrieve', 'crits_key')
             self.crits_source = self.configp.get('Maltrieve', 'crits_source')
+            if args.crits_cert:
+                self.crits_cert = args.crits_cert
+            elif self.configp.get('Maltrieve', 'crits_cert'):
+                self.crits_cert = self.configp.get('Maltrieve', 'crits_cert')
+            else:
+               self.crits_cert = False 
         else:
             self.crits = False
 
@@ -159,9 +165,9 @@ def upload_crits(response, md5, cfg):
             'domain': url_tag.netloc
         }
         try:
-            # Note that this request does NOT go through proxies
+            # Note that this request could go through proxies
             logging.debug("Domain submission: %s|%r", url, domain_data)
-            domain_response = requests.post(url, headers=headers, data=domain_data, verify=False)
+            domain_response = requests.post(url, headers=headers, data=domain_data, proxies=self.proxy, verify=cfg.crits_cert)
             # pylint says "Instance of LookupDict has no 'ok' member" but it's wrong, I checked
             if domain_response.status_code == requests.codes.ok:
                 domain_response_data = domain_response.json()
@@ -194,8 +200,8 @@ def upload_crits(response, md5, cfg):
             'file_format': file_type  # must be type zip, rar, or raw
         }
         try:
-            # Note that this request does NOT go through proxies
-            sample_response = requests.post(url, headers=headers, files=files, data=sample_data, verify=False)
+            # Note that this request can go through proxies
+            sample_response = requests.post(url, headers=headers, files=files, data=sample_data, proxies=self.proxy, verify=cfg.crits_cert)
             # pylint says "Instance of LookupDict has no 'ok' member" but it's wrong, I checked
             if sample_response.status_code == requests.codes.ok:
                 sample_response_data = sample_response.json()
@@ -226,8 +232,8 @@ def upload_crits(response, md5, cfg):
                 'rel_date': datetime.datetime.now()
             }
             try:
-                # Note that this request does NOT go through proxies
-                relationship_response = requests.post(url, headers=headers, data=relationship_data, verify=False)
+                # Note that this request could go through proxies
+                relationship_response = requests.post(url, headers=headers, data=relationship_data, proxies=self.proxy, verify=cfg.crits_cert)
                 # pylint says "Instance of LookupDict has no 'ok' member"
                 if relationship_response.status_code != requests.codes.ok:
                     logging.info("Submitted relationship info for %s to CRITs, response was %r",
@@ -249,8 +255,8 @@ def upload_vxcage(response, md5, cfg):
         url = "{srv}/malware/add".format(srv=cfg.vxcage)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            # Note that this request does NOT go through proxies
-            response = requests.post(url, headers=headers, files=files, data=tags)
+            # Note that this request can go through proxies
+            response = requests.post(url, headers=headers, files=files, data=tags, proxies=self.proxy)
             response_data = response.json()
             logging.info("Submitted %s to VxCage, response was %d", md5, response_data["message"])
         except requests.exceptions.ConnectionError:
@@ -267,7 +273,8 @@ def upload_cuckoo(response, md5, cfg):
         url = "{srv}/tasks/create/url".format(srv=cfg.cuckoo)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            response = requests.post(url, headers=headers, data=data)
+            # Note that this request can go through proxies
+            response = requests.post(url, headers=headers, data=data, proxies=self.proxy)
             response_data = response.json()
             logging.info("Submitted %s to Cuckoo, task ID %d", md5, response_data["task_id"])
         except requests.exceptions.ConnectionError:
@@ -285,8 +292,8 @@ def upload_viper(response, md5, cfg):
         url = "{srv}/file/add".format(srv=cfg.viper)
         headers = {'User-agent': 'Maltrieve'}
         try:
-            # Note that this request does NOT go through proxies
-            response = requests.post(url, headers=headers, files=files, data=tags)
+            # Note that this request can go through proxies
+            response = requests.post(url, headers=headers, files=files, data=tags, proxies=self.proxy)
             response_data = response.json()
             logging.info("Submitted %s to Viper, response was %s", md5, response_data["message"])
         except requests.exceptions.ConnectionError:
