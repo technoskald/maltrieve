@@ -63,7 +63,7 @@ class config(object):
         elif args.https_proxy:
             self.proxy = {'http': args.proxy, 'https': args.https_proxy}
         elif self.configp.has_option('Maltrieve', 'proxy'):
-            self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'proxy')}
+            self.proxy = {'http': self.configp.get('Maltrieve', 'proxy')}
         elif self.configp.has_option('Maltrieve', 'https_proxy'):
             self.proxy = {'http': self.configp.get('Maltrieve', 'proxy'), 'https': self.configp.get('Maltrieve', 'https_proxy')}
         else:
