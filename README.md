@@ -13,15 +13,13 @@
 
 ## Maltrieve
 
-Maltrieve originated as a fork of [mwcrawler](https://github.com/ricardo-dias/mwcrawler). It retrieves malware directly from the sources as listed at a number of sites. Currently we crawl the following:
+Maltrieve originated as a fork of [mwcrawler](https://github.com/ricardo-dias/mwcrawler). It retrieves malware directly from the sources as listed at a number of sites. Currently we crawl the following (via included plugins):
 
-* [Malc0de](http://malc0de.com/rss)
 * [Malware Domain List](http://www.malwaredomainlist.com/hostslist/mdl.xml)
 * [Malware URLs](http://malwareurls.joxeankoret.com/normal.txt)
 * [VX Vault](http://vxvault.siri-urz.net/URL_List.php)
 * [URLquery](http://urlquery.net/)
-* [CleanMX](http://support.clean-mx.de/clean-mx/xmlviruses.php?)
-* [ZeusTracker](https://zeustracker.abuse.ch/monitor.php?urlfeed=binaries)
+* Additional plugins available: [Combine plugins](https://github.com/mlsecproject/combine/tree/dev/combine/plugins)
 
 Other improvements include:
 
@@ -42,6 +40,7 @@ Maltrieve requires the following dependencies:
 * [feedparser](https://pypi.python.org/pypi/feedparser)
 * [python-magic](https://pypi.python.org/pypi/python-magic/)
 * [Requests](http://www.python-requests.org)
+* [Yapsy](https://pypi.python.org/pypi/Yapsy)
 
 With the exception of the Python header files, these can all be found in [requirements.txt](./requirements.txt). On Debian-based distributions, run `sudo apt-get install python-dev`. On Red Hat-based distributions, run `sudo yum install python-devel`. After that, just `pip install -e .`.  You may need to prepend that with ```sudo``` if not running in a virtual environment, but using such an environment is highly encouraged.
 

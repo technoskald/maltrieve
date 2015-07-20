@@ -1,0 +1,9 @@
+[Core]
+Name = urlquery
+Module = urlquery
+
+[Documentation]   
+Author = sooshie@gmail.com
+Version = 0.1
+Website = http://secrepo.com
+Description = URLQuery
