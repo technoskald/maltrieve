@@ -117,9 +117,12 @@ class config(object):
         self.logheaders = self.configp.get('Maltrieve', 'logheaders')
 
         # TODO: Merge these
-        self.vxcage = args.vxcage or self.configp.has_option('Maltrieve', 'vxcage')
-        self.cuckoo = args.cuckoo or self.configp.has_option('Maltrieve', 'cuckoo')
-        self.viper = args.viper or self.configp.has_option('Maltrieve', 'viper')
+        if args.vxcage or self.configp.has_option('Maltrieve', 'vxcage'):
+            self.vxcage = self.configp.get('Maltrieve', 'vxcage')
+        if args.cuckoo or self.configp.has_option('Maltrieve', 'cuckoo'):
+            self.cuckoo = self.configp.get('Maltrieve', 'cuckoo')
+        if args.viper or self.configp.has_option('Maltrieve', 'viper'):
+            self.viper = self.configp.get('Maltrieve', 'viper')
 
         # CRITs
         if args.crits or self.configp.has_option('Maltrieve', 'crits'):
