@@ -1,6 +1,6 @@
 #!/bin/sh
 
-root_dir="/root/Downloads/hp_pulls/"
+root_dir="/media/malware/maltrievepulls/"
 all_files="$root_dir*"
 for file in $all_files
 do
