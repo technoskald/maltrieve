@@ -480,7 +480,7 @@ def main():
 
     print "Completed source processing"
 
-    headers['User-Agent'] = cfg.useragent
+    headers['User-Agent'] = cfg.useragent["User-Agent"]
     malware_urls = set()
     for response in source_lists:
         if hasattr(response, 'status_code') and response.status_code == 200:
